@@ -1,0 +1,522 @@
+---
+const title = "Court deadline control, automated — Facundo Sarina";
+const description =
+  "A case study: reading a court filing portal to find the procedural obligations a law firm had missed. 404 cases audited, 11 overdue items found.";
+
+const stats = [
+  { n: "404", l: "active cases audited in one run" },
+  { n: "11", l: "overdue obligations found, across 7 cases" },
+  { n: "13", l: "judicial districts covered" },
+  { n: "~1,300", l: "lines of Python, with tests" },
+];
+
+const checks = [
+  "Complaint served, but the corresponding notice never filed",
+  "Evidence stage opened without the letters or notices it requires",
+  "A letter or notice ordered in the ruling and never sent",
+  "Court fees ordered but not credited",
+  "A letter or notice rejected by the court and never refiled",
+];
+
+const states = [
+  {
+    k: "Missing",
+    d: "No filing by the firm cites that ruling. If another party filed one, the report says so.",
+  },
+  {
+    k: "Awaiting court signature",
+    d: "The firm filed it; the court has not countersigned yet. Nothing to do but wait.",
+  },
+  {
+    k: "Needs review",
+    d: "A letter went out, but not to every recipient the ruling named. A human has to look.",
+  },
+  {
+    k: "Could not be checked",
+    d: "The run could not read these. They carry over to the next one.",
+  },
+];
+
+const sample = [
+  { date: "02/10/2024", mov: "Letter ordered", missing: "Letter never filed", days: 28 },
+  { date: "19/09/2024", mov: "Evidence stage opened", missing: "Notice to defendant", days: 41 },
+  { date: "11/09/2024", mov: "Fees ordered", missing: "Court fee not credited", days: 49 },
+];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content="Court deadline control, automated" />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="article" />
+  </head>
+
+  <body>
+    <main>
+      <header class="hero">
+        <p class="eyebrow">Case study · Legal operations</p>
+        <h1>Court deadline control, automated</h1>
+        <p class="lede">
+          Estudio Pantuso y Asociados, a labour-law firm in Quilmes, Buenos Aires, was checking
+          procedural deadlines by hand, case by case, and it had stopped scaling. I built a system
+          that reads the court's filing portal and works out what the firm still owes. In its
+          largest run it went through <strong>404 active cases</strong> and found{" "}
+          <strong>11 overdue obligations across 7 of them</strong>.
+        </p>
+      </header>
+
+      <ul class="stats">
+        {
+          stats.map((s) => (
+            <li>
+              <span class="n">{s.n}</span>
+              <span class="l">{s.l}</span>
+            </li>
+          ))
+        }
+      </ul>
+
+      <section>
+        <h2>The problem</h2>
+        <p>
+          In Argentine labour litigation, every ruling a court issues creates obligations for the
+          parties: serve process, file a letter to an outside body, pay a fee. Miss one and the case
+          stalls — or worse. There is no reminder; it is on the firm to notice.
+        </p>
+        <p>
+          I have handled case management at this firm since 2018 — workplace-injury and occupational
+          illness claims, around thirty filings a week — so the gap was mine before it was a
+          project. The method was to open each case in the court portal and read its history. With
+          several hundred active cases spread across thirteen judicial districts, that check got
+          done when someone had time, which is to say not reliably.
+        </p>
+      </section>
+
+      <section>
+        <h2>The hard part is not reading the portal</h2>
+        <p>
+          Scraping the case history is the easy half. The real question is harder:{" "}
+          <em>has this obligation been met or not?</em> A ruling orders a notice; weeks later some
+          document appears in the file. Is it the right one?
+        </p>
+        <p>
+          So the system links every filing back to the ruling that ordered it. For each letter or
+          notice it opens the document and reads four things: who signed it, who it is addressed to,
+          which ruling date it cites, and whether the court has countersigned. A ruling counts as
+          complied with <strong>only</strong> when there is a filing by this firm citing that
+          ruling's date. Anything still open after ten days is flagged.
+        </p>
+        <h3>What it looks for</h3>
+        <ul class="checks">
+          {checks.map((c) => <li>{c}</li>)}
+        </ul>
+      </section>
+
+      <section>
+        <h2>Four states, not two</h2>
+        <p>
+          An early version answered "done" or "missing" and was wrong often enough to be useless.
+          Court workflows have middle states, and a deadline tool that hides them trains people to
+          ignore it. The report has four:
+        </p>
+        <dl class="states">
+          {
+            states.map((s) => (
+              <div>
+                <dt>{s.k}</dt>
+                <dd>{s.d}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        <p class="aside">
+          The fourth matters most. If a run cannot read twenty cases, a report that quietly leaves
+          them out reads as "all clear" — which is exactly the failure a deadline tool exists to
+          prevent. Unreadable cases are listed by name and carried to the next run.
+        </p>
+      </section>
+
+      <section>
+        <h2>What came out</h2>
+        <p>
+          One email a day, only when something was overdue. If nothing was, it sent nothing. If it
+          could not reach the portal at all, it said so rather than reporting silence as good news.
+        </p>
+
+        <figure class="report">
+          <figcaption>Sample output — anonymised, real layout</figcaption>
+          <div class="report-head">
+            <strong>Overdue filings — 02/10/2026</strong>
+            <span>11 pending across 7 cases, out of 404 checked</span>
+          </div>
+          <div class="case">
+            <p class="case-name">CASE NAME REDACTED — claim for damages</p>
+            <p class="case-meta">File 00000 · Labour Court No. 2 · open</p>
+            <table>
+              <thead>
+                <tr><th>Ruling date</th><th>What it ordered</th><th>What is missing</th><th>Days</th></tr>
+              </thead>
+              <tbody>
+                {
+                  sample.map((r) => (
+                    <tr>
+                      <td>{r.date}</td>
+                      <td>{r.mov}</td>
+                      <td>{r.missing}</td>
+                      <td class="days">{r.days}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </figure>
+      </section>
+
+      <section>
+        <h2>Engineering decisions worth naming</h2>
+        <dl class="states">
+          <div>
+            <dt>It backs off instead of pushing through</dt>
+            <dd>
+              When the portal asks for a security check, the script stops, waits — up to an hour —
+              and resumes more slowly, thirty seconds between pages. It never attempts to work
+              around the check. A tool that gets the firm's account flagged is worse than no tool.
+            </dd>
+          </div>
+          <div>
+            <dt>It only re-reads what changed</dt>
+            <dd>
+              Rulings are cached, and cases with no movement for over a year are skipped. Each run
+              does the smallest amount of reading that still gives a correct answer.
+            </dd>
+          </div>
+          <div>
+            <dt>The matching rules are tested</dt>
+            <dd>
+              The logic that decides "complied with" is the part that must not be wrong, so it sits
+              in its own module with its own tests, separate from the scraping.
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <footer>
+        <p class="stack">
+          <strong>Stack</strong> · Python · Playwright · BeautifulSoup · HTML reporting · SMTP
+        </p>
+        <p class="who">
+          Facundo Sarina — legal operations and process automation.{" "}
+          <a href="https://www.linkedin.com/in/facundo-sarina">LinkedIn</a> ·{" "}
+          <a href="https://github.com/facundosarina">GitHub</a>
+        </p>
+        <p class="note">
+          Built and run during 2026 at Estudio Pantuso y Asociados, where I have handled case
+          management since 2018. No client data appears on this page: the sample report reproduces
+          the real layout with invented content.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
+
+<style>
+  :root {
+    --ground: #ffffff;
+    --surface: #f6f8f8;
+    --line: #dde4e5;
+    --ink: #1a1a1a;
+    --muted: #55605f;
+    --accent: #0e5f66;
+    --warn: #8a5a12;
+    --warn-soft: #fbf1dd;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #101618;
+      --surface: #182022;
+      --line: #2b3639;
+      --ink: #e6edee;
+      --muted: #9aa8aa;
+      --accent: #4cc0ca;
+      --warn: #e0b061;
+      --warn-soft: #30260f;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #101618;
+    --surface: #182022;
+    --line: #2b3639;
+    --ink: #e6edee;
+    --muted: #9aa8aa;
+    --accent: #4cc0ca;
+    --warn: #e0b061;
+    --warn-soft: #30260f;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 17px/1.65 ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  main {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 4rem 16px 5rem;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 6vw, 2.8rem);
+    letter-spacing: -0.022em;
+    margin: 0.2em 0 0.4em;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+    letter-spacing: -0.01em;
+    margin: 3rem 0 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  h3 {
+    font-size: 1.02rem;
+    margin: 2rem 0 0.6rem;
+    color: var(--accent);
+  }
+
+  p {
+    margin: 0 0 1.05em;
+  }
+
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .lede {
+    font-size: 1.14rem;
+    color: var(--muted);
+  }
+
+  .lede strong {
+    color: var(--ink);
+  }
+
+  .stats {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 2.5rem 0 0;
+    padding: 0;
+  }
+
+  .stats li {
+    background: var(--ground);
+    padding: 1rem 1.1rem;
+  }
+
+  .stats .n {
+    display: block;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stats .l {
+    display: block;
+    font-size: 0.84rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+  }
+
+  .checks {
+    margin: 0 0 1em;
+    padding-left: 1.15rem;
+  }
+
+  .checks li {
+    margin-bottom: 0.4em;
+  }
+
+  .states {
+    margin: 1.2rem 0 1.4rem;
+    display: grid;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .states > div {
+    background: var(--ground);
+    padding: 0.95rem 1.1rem;
+  }
+
+  .states dt {
+    font-weight: 650;
+    color: var(--accent);
+    margin-bottom: 0.2rem;
+  }
+
+  .states dd {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .aside {
+    border-left: 3px solid var(--accent);
+    padding: 0.1rem 0 0.1rem 1rem;
+    color: var(--muted);
+    font-size: 0.97rem;
+  }
+
+  .report {
+    margin: 1.5rem 0 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .report figcaption {
+    padding: 0.55rem 1rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .report-head {
+    padding: 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .report-head strong {
+    display: block;
+    font-size: 1.05rem;
+  }
+
+  .report-head span {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .case {
+    padding: 1rem;
+  }
+
+  .case-name {
+    margin: 0;
+    font-weight: 650;
+    font-size: 0.95rem;
+  }
+
+  .case-meta {
+    margin: 0.1rem 0 0.8rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  th {
+    text-align: left;
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 0.35rem 0.5rem 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  td {
+    padding: 0.5rem 0.5rem 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .days {
+    font-variant-numeric: tabular-nums;
+    font-weight: 650;
+    color: var(--warn);
+    background: var(--warn-soft);
+    text-align: center;
+    width: 3.2rem;
+    border-radius: 4px;
+  }
+
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+
+  footer .stack strong {
+    color: var(--ink);
+  }
+
+  footer a {
+    color: var(--accent);
+  }
+
+  footer .note {
+    font-size: 0.84rem;
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 34rem) {
+    main {
+      padding-top: 2.5rem;
+    }
+    table {
+      font-size: 0.82rem;
+    }
+  }
+</style>

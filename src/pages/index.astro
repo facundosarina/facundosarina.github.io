@@ -1,0 +1,172 @@
+---
+const title = "Facundo Sarina — legal operations & process automation";
+const description =
+  "Eight years running case management at an Argentine law firm, now automating the parts of legal back-office work that leak time.";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content="Facundo Sarina" />
+    <meta property="og:description" content={description} />
+  </head>
+
+  <body>
+    <main>
+      <h1>Facundo Sarina</h1>
+      <p class="role">Legal operations &amp; process automation · Campobasso, Italy</p>
+
+      <p class="bio">
+        Eight years running case management at an Argentine labour-law firm — workplace-injury
+        claims, filings, procedural deadlines — and since 2026, building the automation that takes
+        the repetitive half of that off the desk. I know the domain and the tooling, which is the
+        combination legal-tech teams usually have to hire twice for.
+      </p>
+
+      <h2>Work</h2>
+      <ul class="work">
+        <li>
+          <a href="/deadline-control/">Court deadline control, automated</a>
+          <span
+            >Reading a court filing portal to find the procedural obligations a firm had missed. 404
+            cases audited, 11 overdue items surfaced.</span
+          >
+        </li>
+        <li>
+          <a href="https://github.com/facundosarina/n8n-request-tracker">n8n client request tracker</a>
+          <span>Intake workflow: field validation, duplicate detection, a clear status per request.</span>
+        </li>
+        <li>
+          <a href="https://github.com/facundosarina/expense-tracker-dashboard">Expense tracker dashboard</a>
+          <span>Streamlit app that categorises transactions from their description, live.</span>
+        </li>
+      </ul>
+
+      <footer>
+        <a href="https://www.linkedin.com/in/facundo-sarina">LinkedIn</a> ·
+        <a href="https://github.com/facundosarina">GitHub</a> ·
+        <a href="mailto:facusarina2@hotmail.com">Email</a>
+      </footer>
+    </main>
+  </body>
+</html>
+
+<style>
+  :root {
+    --ground: #ffffff;
+    --line: #dde4e5;
+    --ink: #1a1a1a;
+    --muted: #55605f;
+    --accent: #0e5f66;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #101618;
+      --line: #2b3639;
+      --ink: #e6edee;
+      --muted: #9aa8aa;
+      --accent: #4cc0ca;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #101618;
+    --line: #2b3639;
+    --ink: #e6edee;
+    --muted: #9aa8aa;
+    --accent: #4cc0ca;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 17px/1.65 ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  main {
+    max-width: 36rem;
+    margin: 0 auto;
+    padding: 5rem 16px 4rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 7vw, 2.6rem);
+    letter-spacing: -0.022em;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .role {
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0.3rem 0 1.8rem;
+    font-size: 0.98rem;
+  }
+
+  .bio {
+    color: var(--muted);
+    margin: 0 0 2.5rem;
+  }
+
+  h2 {
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .work {
+    list-style: none;
+    margin: 0 0 3rem;
+    padding: 0;
+  }
+
+  .work li {
+    margin-bottom: 1.2rem;
+  }
+
+  .work a {
+    color: var(--ink);
+    font-weight: 650;
+    text-decoration: none;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .work a:hover {
+    color: var(--accent);
+  }
+
+  .work span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.93rem;
+    margin-top: 0.25rem;
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 1.3rem;
+    font-size: 0.93rem;
+    color: var(--muted);
+  }
+
+  footer a {
+    color: var(--accent);
+  }
+</style>
