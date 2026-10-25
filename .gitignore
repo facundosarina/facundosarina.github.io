@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# notas locales de asistentes
+CLAUDE.md
+AGENTS.md
